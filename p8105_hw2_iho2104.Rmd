@@ -9,4 +9,64 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(tidyverse)
+library(readxl)
+```
 
+# Problem 1 
+
+# clean the data in pols-month.csv. Use separate() to break up the variable mon into integer variables year, month, and day; replace month number with month name; create a president variable taking values gop and dem, and remove prez_dem and prez_gop; and remove the day variable.
+
+```{r clean_538_pols}
+month_df = 
+  tibble(
+    month_num = 1:12,
+    month_abb = month.abb,
+    month = month.name
+  )
+
+pols = 
+  read_csv("pols-month.csv") |>
+  separate(mon, into = c("year", "month_num", "day"), convert = TRUE) |>
+  mutate(
+    president = recode(prez_gop, "0" = "dem", "1" = "gop", "2" = "gop")) |>
+  left_join(x = _, y = month_df) |> 
+  select(year, month, everything(), -day, -starts_with("prez")) 
+```
+
+# clean the data in snp.csv using a similar process to the above. For consistency across datasets, arrange according to year and month, and organize so that year and month are the leading columns.
+
+```{r clean_538_snp}
+snp = 
+  read_csv("snp.csv") |>
+  separate(date, into = c("month", "day", "year"), convert = TRUE) |>
+  arrange(year, month) |>
+  mutate(month = month.name[month]) |>
+  select(year, month, close) 
+```
+
+# tidy the unemployment data so that it can be merged with the previous datasets. This process will involve switching from “wide” to “long” format; ensuring that key variables have the same name; and ensuring that key variables take the same values.
+
+```{r clean_538_unemp}
+unemployment = 
+  read_csv("unemployment.csv") |>
+  rename(year = Year) |>
+  pivot_longer(
+    Jan:Dec, 
+    names_to = "month_abb",
+    values_to = "unemployment"
+  ) |> 
+  left_join(x = _, y = month_df) |> 
+  select(year, month, unemployment)
+```
+
+# join the datasets by merging 'snp' into 'pols', and merging 'unemployment' into the result.
+
+```{r merge_538}
+data_538 = 
+  left_join(pols, snp) |>
+  left_join(x = _, y = unemployment)
+
+str(data_538)
+```
