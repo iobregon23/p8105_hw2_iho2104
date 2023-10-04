@@ -70,10 +70,96 @@ str(data_538)
 
 # Problem 2
 
-specify the sheet in the Excel file and to omit non-data entries (rows with notes / figures; columns containing notes) using arguments in read_excel, use reasonable variable names, omit rows that do not include dumpster-specific data
+specify the sheet in the Excel file and omit non-data entries (rows with notes / figures; columns containing notes) using arguments in read_excel. use reasonable variable names and omit rows that do not include dumpster-specific data. 
 
-```{r clean trash wheel data}
+The data include a column for the (approximate) number of homes powered. This calculation is described in the Homes powered note, but not applied to every row in the dataset. Update the data to include a new homes_powered variable based on this calculation.
 
-dumpster_df = read_excel("202207 Trash Wheel Collection Data.xlsx", sheet = "Mr. Trash Wheel")
+```{r clean_mr_trash_wheel}
+
+mr_trash_wheel_df = read_excel("202207 Trash Wheel Collection Data.xlsx", sheet = "Mr. Trash Wheel", col_names = TRUE) |> 
+  janitor::clean_names() |> 
+  separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
+  mutate(homes_powered = weight_tons * 500/30) 
+```
+
+
+
+
+```{r clean_prof_trash_wheel}
+
+prof_trash_wheel = read_excel("202207 Trash Wheel Collection Data.xlsx", sheet = "Professor Trash Wheel", range= "B2:N547", col_names = TRUE) |> 
+  janitor::clean_names() |> 
+  separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
+  mutate(homes_powered = weight_tons * 500/30) 
+```
+
+```{r clean_gywnnda_trash_wheel}
+
+gwynnda_trash_wheel = read_excel("202207 Trash Wheel Collection Data.xlsx", sheet = "Gwynnda Trash Wheel", col_names = TRUE) |> 
+  janitor::clean_names() |> 
+  separate(date, into = c("month", "day", "year"), convert = TRUE) |> 
+mutate(homes_powered = weight_tons * 500/30) 
+```
+
+```{r merge_files}
+mr_and_prof_merge = 
+  left_join(mr_trash_wheel_df, prof_trash_wheel)
+mr_prof_gywn_merge = left_join(mr_and_prof_merge, gwynnda_trash_wheel)
 
 ```
+
+
+Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of cigarette butts collected by Gwynnda in July of 2021?
+
+## Problem 2
+
+Import, clean, and tidy the dataset of baseline demographics. Ensure that sex and APOE4 carrier status are appropriate encoded (i.e. not numeric), and remove any participants who do not meet the stated inclusion criteria (i.e. no MCI at baseline). 
+
+```{r clean_mci_baseline}
+mci_baseline_df = read_csv("MCI_baseline.csv", skip = 1) |> 
+janitor::clean_names() |> 
+  mutate(
+    sex = case_match(
+      sex,
+      1  ~ "male",
+      0 ~ "female"
+    ),
+    apoe4 = case_match(
+      apoe4,
+      1 ~ "carrier",
+      0 ~ "non-carrier"
+    ), 
+    age_at_onset = as.numeric(age_at_onset)
+    ) 
+str(mci_baseline_df) 
+mci_baseline_df = mci_baseline_df |> 
+  filter(age_at_onset > current_age)
+view(mci_baseline_df)
+```
+
+
+
+
+
+```{r}
+mci_baseline_df = read_csv("MCI_baseline.csv", skip = 1) |> 
+janitor::clean_names() |> 
+  mutate(
+    sex = case_match(
+      sex,
+      1  ~ "male",
+      0 ~ "female"
+    ),
+    apoe4 = case_match(
+      apoe4,
+      1 ~ "carrier",
+      0 ~ "non-carrier"
+    ), 
+    age_at_onset = as.numeric(age_at_onset)
+    ) 
+str(mci_baseline_df) 
+mci_baseline_df = mci_baseline_df |> 
+  filter(age_at_onset > current_age)
+view(mci_baseline_df)
+```
+
